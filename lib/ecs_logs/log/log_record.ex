@@ -62,12 +62,12 @@ defmodule LogRecord do
     }
   end
 
-  defp get_current_local_date() do
+  defp get_current_local_date do
     now = DateTime.utc_now() |> Timex.to_datetime("America/Bogota")
     Timex.format!(now, "{0D}/{0M}/{YYYY} {h24}:{m}:{s}{ss}")
   end
 
-  defp get_service_name() do
+  defp get_service_name do
     case Application.fetch_env(:ecs_logs_elixir, :service_name) do
       {:ok, service_name} -> service_name
       :error -> "INDEFINIDO"
