@@ -61,9 +61,7 @@ defmodule EcsElixirLogs.MixProject do
       {:excoveralls, "~> 0.18", [only: [:dev, :test]]},
       # {:git_hooks, "~> 0.8", [only: [:dev, :test], runtime: false]},
       {:credo, "~> 1.7", [only: [:dev, :test], runtime: false]},
-      {:dialyxir, "~> 1.4", [only: [:dev, :test], runtime: false]},
-      # Release
-      {:elixir_structure_manager, "~> 1.6", [only: [:dev, :test]]}
+      {:dialyxir, "~> 1.4", [only: [:dev, :test], runtime: false]}
     ]
   end
 end
