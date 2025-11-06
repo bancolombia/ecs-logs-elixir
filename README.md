@@ -9,9 +9,7 @@ Add `ecs_logs_elixir` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ecs_logs_elixir, 
-    sparse: "ecs_logs_elixir",
-    git: "https://grupobancolombia.visualstudio.com/Vicepresidencia%20Servicios%20de%20Tecnolog%C3%ADa/_git/NU0141001_Library_MR"}
+    {:ecs_logs_elixir, , "~> 0.1.0"}
   ]
 end
 ```
@@ -182,9 +180,6 @@ mix test
 
 # Run with coverage
 mix coveralls.html
-
-# Run specific test file
-mix test test/ecs_logs/ecs/elixir_ecs_logger_test.exs
 ```
 
 ### Code Quality
@@ -211,7 +206,7 @@ We welcome contributions! Please follow these steps:
 5. Ensure all tests pass (`mix test`)
 6. Run code formatting (`mix format`)
 7. Run static analysis (`mix credo`)
-8. Commit your changes (`git commit -m 'Add amazing feature'`)
+8. Commit your changes (`git commit -m 'feat(user_module): Add amazing feature'`)
 9. Push to the branch (`git push origin feature/amazing-feature`)
 10. Open a Pull Request
 
