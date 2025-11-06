@@ -68,12 +68,12 @@ jobs:
           SKIP_GIT_HOOKS: 'true'
       - name: Static code analysis
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
-      - name: Tests & Coverage (main)
-        if: github.ref == 'refs/heads/main'
-        run: mix coveralls.github
-        env:
-          CI_ENV: 'true'
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Tests & Coverage (main)
+      #   if: github.ref == 'refs/heads/main'
+      #   run: mix coveralls.github
+      #   env:
+      #     CI_ENV: 'true'
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Tests & Coverage (pull requests)
         if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         run: mix coveralls.lcov
