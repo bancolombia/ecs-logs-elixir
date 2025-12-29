@@ -70,24 +70,92 @@ jobs:
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
       - name: Static code analysis
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
-     # -- ensure Node is available for conversion (needed for all branches that run Sonar)
-      - name: Set up NodeJS (for coverage conversion)
-        uses: actions/setup-node@v6
-        with:
-          node-version: '18'
-
-      # -- Run tests and generate LCOV (use for all runs)
+    #SONAR
+    # generate LCOV (ensure this runs before conversion & Sonar)
       - name: Tests & Coverage (generate LCOV)
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || github.ref == 'refs/heads/main'
         run: mix coveralls.lcov
         env:
           CI_ENV: 'true'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # -- Convert LCOV to Cobertura XML so Sonar can parse coverage
+      
+      # convert LCOV -> Cobertura XML (no external npm dependency)
       - name: Convert LCOV to Cobertura XML
-        run: npx -y lcov-to-cobertura-xml cover/lcov.info -o cover/cobertura-coverage.xml
-
-      # -- SonarQube scan (after coverage exists). Pass the Cobertura XML to Sonar.
+        run: |
+          python3 - <<'PY'
+          import os, sys, xml.etree.ElementTree as ET, xml.dom.minidom as minidom
+      
+          lcov = 'cover/lcov.info'
+          out = 'cover/cobertura-coverage.xml'
+          if not os.path.exists(lcov):
+            print('LCOV file not found at', lcov, file=sys.stderr)
+            sys.exit(1)
+      
+          def pretty_xml(elem):
+            rough = ET.tostring(elem, 'utf-8')
+            reparsed = minidom.parseString(rough)
+            return reparsed.toprettyxml(indent='  ')
+      
+          total_valid = 0
+          total_covered = 0
+      
+          coverage = ET.Element('coverage', {
+            'line-rate': '0.0',
+            'branch-rate': '0.0',
+            'lines-covered': '0',
+            'lines-valid': '0',
+            'timestamp': str(int(os.path.getmtime(lcov))),
+            'version': 'lcov-to-cobertura-python'
+          })
+          packages = ET.SubElement(coverage, 'packages')
+      
+          with open(lcov, 'r') as f:
+            current_file = None
+            current_lines = {}
+            for raw in f:
+              line = raw.strip()
+              if line.startswith('SF:'):
+                current_file = line[3:]
+                current_lines = {}
+              elif line.startswith('DA:'):
+                parts = line[3:].split(',')
+                if len(parts) >= 2:
+                  ln = int(parts[0]); hits = int(parts[1])
+                  current_lines[ln] = hits
+              elif line == 'end_of_record':
+                if current_file:
+                  # build package/class structure
+                  pkg_name = os.path.dirname(current_file) or '.'
+                  pkg = ET.SubElement(packages, 'package', {'name': pkg_name})
+                  classes = ET.SubElement(pkg, 'classes')
+                  class_name = os.path.basename(current_file)
+                  cls = ET.SubElement(classes, 'class', {'name': class_name, 'filename': current_file, 'line-rate': '0.0','branch-rate':'0.0'})
+                  lines_el = ET.SubElement(cls, 'lines')
+                  valid = len(current_lines)
+                  covered = sum(1 for h in current_lines.values() if h > 0)
+                  for num, hits in sorted(current_lines.items()):
+                    ET.SubElement(lines_el, 'line', {'number': str(num), 'hits': str(hits)})
+                  # update totals
+                  total_valid += valid
+                  total_covered += covered
+                  current_file = None
+                  current_lines = {}
+      
+          # update top-level coverage attributes
+          coverage.set('lines-valid', str(total_valid))
+          coverage.set('lines-covered', str(total_covered))
+          if total_valid > 0:
+            coverage.set('line-rate', '{:.6f}'.format(total_covered / float(total_valid)))
+      
+          # write output
+          os.makedirs(os.path.dirname(out), exist_ok=True)
+          with open(out, 'w') as w:
+            w.write(pretty_xml(coverage))
+      
+          print('Wrote Cobertura XML to', out)
+          PY
+      
+      # run Sonar after coverage exists; point it to the Cobertura XML
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         with:
