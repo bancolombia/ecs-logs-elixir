@@ -62,7 +62,10 @@ defmodule EcsElixirLogs.MixProject do
       {:excoveralls, "~> 0.18", [only: [:dev, :test]]},
       # {:git_hooks, "~> 0.8", [only: [:dev, :test], runtime: false]},
       {:credo, "~> 1.7", [only: [:dev, :test], runtime: false]},
-      {:dialyxir, "~> 1.4", [only: [:dev, :test], runtime: false]}
+      {:dialyxir, "~> 1.4", [only: [:dev, :test], runtime: false]},
+      {:sobelow, "~> 0.13.0", [only: :test]},
+      {:credo_sonarqube, "~> 0.1.3", [only: :test]},
+      {:ex_unit_sonarqube, "~> 0.1.3", [only: :test]},
     ]
   end
 end
