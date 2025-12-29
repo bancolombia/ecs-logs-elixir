@@ -72,13 +72,14 @@ jobs:
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
     #SONAR
       - name: Run tests with coverage
-        run: mix coveralls.lcov
+        run: mix coveralls.xml --cover
       - name: Fix LCOV paths
         run: |
           sed -i 's|/home/runner/work/ecs-logs-elixir/ecs-logs-elixir/||g' cover/lcov.info
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
+          CI_ENV: 'true'
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       # - name: Tests & Coverage (main)
       #   if: github.ref == 'refs/heads/main'
