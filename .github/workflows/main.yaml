@@ -70,6 +70,8 @@ jobs:
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
       - name: Static code analysis
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
+      - name: Generate Coverage Report (XML)
+        run: mix coveralls.xml
       - name: SonarQube
         uses: actions/checkout@v4
         with:
