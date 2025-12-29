@@ -68,6 +68,16 @@ jobs:
           SKIP_GIT_HOOKS: 'true'
       - name: Static code analysis
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
+      - name: Static code analysis
+        run: mix format --check-formatted && mix credo --strict && mix dialyzer
+      - name: SonarQube
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       # - name: Tests & Coverage (main)
       #   if: github.ref == 'refs/heads/main'
       #   run: mix coveralls.github
