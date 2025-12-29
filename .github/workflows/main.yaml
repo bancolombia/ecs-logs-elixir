@@ -74,11 +74,36 @@ jobs:
       - name: Run tests with coverage
         run: mix coveralls.lcov
 
-      - name: Convert LCOV to SonarQube XML format
+      - name: Convert LCOV to SonarQube XML format (DEBUG)
         run: |
-          # Instalar lcov_cobertura para convertir formato
+          echo "===== DEBUG: starting LCOV to XML conversion ====="
+      
+          echo "Current directory:"
+          pwd
+      
+          echo "List files before conversion:"
+          ls -lah
+          ls -lah cover || echo "No cover directory found"
+      
+          echo "Installing lcov_cobertura..."
           pip install lcov_cobertura
+      
+          echo "Check lcov.info exists:"
+          ls -lah cover/lcov.info || echo "❌ lcov.info NOT FOUND"
+      
+          echo "First 20 lines of lcov.info:"
+          head -n 20 cover/lcov.info || echo "❌ Cannot read lcov.info"
+      
+          echo "Running lcov_cobertura..."
           lcov_cobertura cover/lcov.info --output coverage.xml
+      
+          echo "Check generated coverage.xml:"
+          ls -lah coverage.xml || echo "❌ coverage.xml NOT GENERATED"
+      
+          echo "First 20 lines of coverage.xml:"
+          head -n 20 coverage.xml || echo "❌ Cannot read coverage.xml"
+      
+          echo "===== DEBUG: LCOV to XML conversion finished ====="
 
       - name: Run Credo (opcional - análisis de código estático)
         run: mix credo --format json > credo-report.json || true
