@@ -17,6 +17,8 @@ defmodule EcsElixirLogs.MixProject do
         credo: :test,
         dialyzer: :test,
         coveralls: :test,
+        sobelow: :test,
+        "ca.sobelow.sonar": :test,
         "coveralls.xml": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
@@ -63,8 +65,8 @@ defmodule EcsElixirLogs.MixProject do
       # {:git_hooks, "~> 0.8", [only: [:dev, :test], runtime: false]},
       {:credo, "~> 1.7", [only: [:dev, :test], runtime: false]},
       {:dialyxir, "~> 1.4", [only: [:dev, :test], runtime: false]},
-      {:sobelow, "~> 0.13.0", [only: :test]},
-      {:credo_sonarqube, "~> 0.1.3", [only: :test]},
+      {:sobelow, "~> 0.14.0", [only: :test]},
+      {:credo_sonarqube, "~> 0.1", [only: :test]},
       {:ex_unit_sonarqube, "~> 0.1.3", [only: :test]}
     ]
   end
