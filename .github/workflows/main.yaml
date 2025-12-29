@@ -68,12 +68,11 @@ jobs:
           SKIP_GIT_HOOKS: 'true'
       - name: Static code analysis
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
-      - name: Static code analysis
-        run: mix format --check-formatted && mix credo --strict && mix dialyzer
     #SONAR
-      - name: Set up dependencies
+      - name: Credo Sonar
+        run: mix credo --sonarqube-base-folder base/folder --sonarqube-file credo_sonarqube.json
+      - name: Coveralls
         run: |
-          mix deps.get
           mix test --cover
           mix coveralls.xml
 
@@ -93,7 +92,6 @@ jobs:
             -Dsonar.tests=test
             -Dsonar.exclusions=**/_build/**
             -Dsonar.coverageReportPaths=cover/excoveralls.xml
-            -Dsonar.testExecutionReportPaths=cover/generic_test_execution_sonarqube.xml
             -Dsonar.externalIssuesReportPaths=cover/credo_sonarqube.json,cover/sobelow_sonarqube.json
       # - name: Tests & Coverage (main)
       #   if: github.ref == 'refs/heads/main'
