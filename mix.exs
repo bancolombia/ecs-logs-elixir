@@ -17,6 +17,7 @@ defmodule EcsElixirLogs.MixProject do
         credo: :test,
         dialyzer: :test,
         coveralls: :test,
+        "coveralls.xml": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
         "coveralls.github": :test,
@@ -34,7 +35,7 @@ defmodule EcsElixirLogs.MixProject do
   defp package do
     [
       files: ["lib", "mix.exs", "README", "LICENSE*"],
-      maintainers: ["Jhonatan Hidalgo"],
+      maintainers: ["Jhonatan Hidalgo", "Nicolas Figueroa"],
       licenses: ["Apache 2.0"]
     ]
   end
