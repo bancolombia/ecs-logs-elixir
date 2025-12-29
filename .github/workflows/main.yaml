@@ -71,6 +71,8 @@ jobs:
     #SONAR
       - name: Credo Sonar
         run: mix credo --sonarqube-base-folder base/folder --sonarqube-file credo_sonarqube.json
+      - name: Cat
+        run: cat credo_sonarqube.json | head -n 5
       - name: Coveralls
         run: |
           mix test --cover
