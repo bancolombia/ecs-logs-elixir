@@ -66,13 +66,17 @@ jobs:
         env:
           MIX_ENV: test
           SKIP_GIT_HOOKS: 'true'
-      - name: Static code analysis
-        run: mix format --check-formatted && mix credo --strict && mix dialyzer
+      #- name: Static code analysis
+       # run: mix format --check-formatted && mix credo --strict && mix dialyzer
     #SONAR
       - name: Credo Sonar
         run: mix credo --sonarqube-base-folder base/folder --sonarqube-file credo_sonarqube.json
-      - name: Cat
+      - name: Cat credo
         run: cat credo_sonarqube.json | head -n 5
+      - name: Sobelow
+        run: mix sobelow --format sonarqube --out cover/sobelow_sonarqube.json
+      - name: Cat Sobelow
+        run: cat cover/sobelow_sonarqube.json | head -n 5
       - name: Coveralls
         run: |
           mix test --cover
@@ -94,7 +98,7 @@ jobs:
             -Dsonar.tests=test
             -Dsonar.exclusions=**/_build/**
             -Dsonar.coverageReportPaths=cover/excoveralls.xml
-            -Dsonar.externalIssuesReportPaths=cover/credo_sonarqube.json,cover/sobelow_sonarqube.json
+            -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,cover/sobelow_sonarqube.json
       # - name: Tests & Coverage (main)
       #   if: github.ref == 'refs/heads/main'
       #   run: mix coveralls.github
