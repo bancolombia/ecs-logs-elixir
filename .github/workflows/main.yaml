@@ -74,9 +74,9 @@ jobs:
       - name: Cat credo
         run: cat credo_sonarqube.json | head -n 5
       - name: Sobelow
-        run: mix sobelow --format sonarqube --out cover/sobelow_sonarqube.json
+        run: mix sobelow --format sonarqube --out sobelow_sonarqube.json
       - name: Cat Sobelow
-        run: cat cover/sobelow_sonarqube.json | head -n 5
+        run: cat sobelow_sonarqube.json | head -n 5
       - name: Coveralls
         run: |
           mix test --cover
@@ -98,7 +98,7 @@ jobs:
             -Dsonar.tests=test
             -Dsonar.exclusions=**/_build/**
             -Dsonar.coverageReportPaths=cover/excoveralls.xml
-            -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,cover/sobelow_sonarqube.json
+            -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,sobelow_sonarqube.json
       # - name: Tests & Coverage (main)
       #   if: github.ref == 'refs/heads/main'
       #   run: mix coveralls.github
