@@ -73,10 +73,6 @@ jobs:
     #SONAR
       - name: Run tests with coverage
         run: mix coveralls.lcov
-      - name: SonarQube
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
