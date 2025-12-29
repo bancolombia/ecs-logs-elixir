@@ -72,12 +72,41 @@ jobs:
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
     #SONAR
       - name: Run tests with coverage
-        run: mix coveralls.xml --cover
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        run: mix coveralls.lcov
+
+      - name: Convert LCOV to SonarQube XML format
+        run: |
+          # Instalar lcov_cobertura para convertir formato
+          pip install lcov_cobertura
+          lcov_cobertura cover/lcov.info --output coverage.xml
+
+      - name: Run Credo (opcional - análisis de código estático)
+        run: mix credo --format json > credo-report.json || true
+        continue-on-error: true
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
         env:
-          CI_ENV: 'true'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Dsonar.sources=lib
+            -Dsonar.tests=test
+            -Dsonar.exclusions=**/*_test.exs,**/deps/**,**/_build/**
+            -Dsonar.coverageReportPaths=coverage.xml
+            -Dsonar.sourceEncoding=UTF-8
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: |
+            coverage.xml
+            cover/
+            credo-report.json
       # - name: Tests & Coverage (main)
       #   if: github.ref == 'refs/heads/main'
       #   run: mix coveralls.github
