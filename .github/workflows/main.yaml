@@ -84,6 +84,8 @@ jobs:
       - name: Coveralls
         run: |
           mix coveralls.xml
+        env:
+          MIX_ENV: test
 
       - name: Debug coverage file
         run: |
@@ -109,6 +111,8 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.sources=lib
             -Dsonar.tests=test
+            -Dsonar.language=elixir
+            -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=**/*_test.exs,**/deps/**,**/_build/**
             -Dsonar.coverageReportPaths=cover/excoveralls.xml
             -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,cover/sobelow_sonarqube.json
