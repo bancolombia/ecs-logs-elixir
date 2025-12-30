@@ -99,7 +99,7 @@ jobs:
       - name: Debug coverage file 2
         run: |
           ls -la cover/
-          cat cover/excoveralls.xml | head -n 20
+          cat cover/excoveralls.xml
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
