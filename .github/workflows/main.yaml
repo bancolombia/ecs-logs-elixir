@@ -102,7 +102,7 @@ jobs:
           cat cover/excoveralls.xml
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
@@ -111,9 +111,10 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.sources=lib
             -Dsonar.tests=test
+            -Dsonar.language=elixir
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=**/*_test.exs,**/deps/**,**/_build/**
-            -Dsonar.text.inclusions=**/*.ex,**/*.exs
+            -Dsonar.inclusions=**/*.ex,**/*.exs
             -Dsonar.coverageReportPaths=cover/excoveralls.xml
             -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,cover/sobelow_sonarqube.json
       # - name: Tests & Coverage (main)
