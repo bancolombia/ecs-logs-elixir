@@ -77,7 +77,8 @@ jobs:
         run: cat credo_sonarqube.json | head -n 5
       - name: Sobelow
         run: | 
-          mix sobelow --format sonarqube --out sobelow.json
+          mix sobelow --out sobelow.json
+          cat sobelow.json | head -n 5
           mix ca.sobelow.sonar -i sobelow.json -o cover/sobelow_sonarqube.json
       - name: Cat Sobelow
         run: cat cover/sobelow_sonarqube.json | head -n 5
