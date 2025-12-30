@@ -76,7 +76,8 @@ jobs:
       - name: Cat credo
         run: cat credo_sonarqube.json | head -n 5
       - name: Sobelow
-        run: | 
+        run: |
+          mkdir -p cover
           mix sobelow --out sobelow.json
           cat sobelow.json | head -n 5
           mix ca.sobelow.sonar -i sobelow.json -o cover/sobelow_sonarqube.json
