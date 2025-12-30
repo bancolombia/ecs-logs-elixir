@@ -69,14 +69,18 @@ jobs:
       #- name: Static code analysis
        # run: mix format --check-formatted && mix credo --strict && mix dialyzer
     #SONAR
+      - name: Build
+        run: mix compile
       - name: Credo Sonar
         run: mix credo --sonarqube-base-folder base/folder --sonarqube-file credo_sonarqube.json
       - name: Cat credo
         run: cat credo_sonarqube.json | head -n 5
       - name: Sobelow
-        run: mix sobelow --format sonarqube --out sobelow_sonarqube.json
+        run: | 
+          mix sobelow --format sonarqube --out sobelow.json
+          mix ca.sobelow.sonar -i sobelow.json -o cover/sobelow_sonarqube.json
       - name: Cat Sobelow
-        run: cat sobelow_sonarqube.json | head -n 5
+        run: cat cover/sobelow_sonarqube.json | head -n 5
       - name: Coveralls
         run: |
           mix test --cover
@@ -98,7 +102,7 @@ jobs:
             -Dsonar.tests=test
             -Dsonar.exclusions=**/_build/**
             -Dsonar.coverageReportPaths=cover/excoveralls.xml
-            -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,sobelow_sonarqube.json
+            -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,cover/sobelow_sonarqube.json
       # - name: Tests & Coverage (main)
       #   if: github.ref == 'refs/heads/main'
       #   run: mix coveralls.github
