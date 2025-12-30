@@ -12,6 +12,7 @@ defmodule EcsElixirLogs.MixProject do
       deps: deps(),
       package: package(),
       description: description(),
+      source_url: "https://github.com/bancolombia/ecs-logs-elixir"
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         credo: :test,
@@ -38,7 +39,10 @@ defmodule EcsElixirLogs.MixProject do
     [
       files: ["lib", "mix.exs", "README", "LICENSE*"],
       maintainers: ["Jhonatan Hidalgo", "Nicolas Figueroa"],
-      licenses: ["Apache 2.0"]
+      licenses: ["Apache 2.0"],
+      links: %{
+        "GitHub" => "https://github.com/bancolombia/ecs-logs-elixir"
+      }
     ]
   end
 
