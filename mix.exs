@@ -67,7 +67,8 @@ defmodule EcsElixirLogs.MixProject do
       {:dialyxir, "~> 1.4", [only: [:dev, :test], runtime: false]},
       {:sobelow, "~> 0.14.0", [only: :test]},
       {:credo_sonarqube, "~> 0.1", [only: :test]},
-      {:ex_unit_sonarqube, "~> 0.1.3", [only: :test]}
+      {:ex_unit_sonarqube, "~> 0.1.3", [only: :test]},
+      {:elixir_structure_manager, "~> 1.6.0", [only: [:dev, :test]]}
     ]
   end
 end
