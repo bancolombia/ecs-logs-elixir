@@ -69,8 +69,6 @@ jobs:
       #- name: Static code analysis
        # run: mix format --check-formatted && mix credo --strict && mix dialyzer
     #SONAR
-      - name: Build
-        run: mix compile
       - name: Credo Sonar
         run: mix credo --sonarqube-base-folder base/folder --sonarqube-file credo_sonarqube.json
       - name: Cat credo
@@ -91,6 +89,15 @@ jobs:
         run: |
           ls -la cover/
           cat cover/excoveralls.xml | head -n 20
+      - name: Fix coverage file paths
+        run: |
+          sed -i 's|path="/lib/|path="lib/|g' cover/excoveralls.xml
+          sed -i 's|path="/test/|path="test/|g' cover/excoveralls.xml
+
+      - name: Debug coverage file 2
+        run: |
+          ls -la cover/
+          cat cover/excoveralls.xml | head -n 20
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
@@ -102,7 +109,7 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.sources=lib
             -Dsonar.tests=test
-            -Dsonar.exclusions=**/_build/**
+            -Dsonar.exclusions=**/*_test.exs,**/deps/**,**/_build/**
             -Dsonar.coverageReportPaths=cover/excoveralls.xml
             -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,cover/sobelow_sonarqube.json
       # - name: Tests & Coverage (main)
