@@ -111,12 +111,11 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.sources=lib
             -Dsonar.tests=test
-            -Dsonar.language=elixir
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=**/*_test.exs,**/deps/**,**/_build/**
-            -Dsonar.inclusions=**/*.ex,**/*.exs
-            -Dsonar.coverageReportPaths=cover/excoveralls.xml
+            -Dsonar.elixir.coverage.reportPaths=cover/excoveralls.xml
             -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,cover/sobelow_sonarqube.json
+
       # - name: Tests & Coverage (main)
       #   if: github.ref == 'refs/heads/main'
       #   run: mix coveralls.github
