@@ -113,7 +113,7 @@ jobs:
             -Dsonar.tests=test
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=**/*_test.exs,**/deps/**,**/_build/**
-            -Dsonar.elixir.coverage.reportPaths=cover/excoveralls.xml
+            -Dsonar.coverageReportPaths=cover/excoveralls.xml
             -Dsonar.externalIssuesReportPaths=credo_sonarqube.json,cover/sobelow_sonarqube.json
 
       # - name: Tests & Coverage (main)
