@@ -85,12 +85,12 @@ jobs:
         run: cat cover/sobelow_sonarqube.json | head -n 5
       - name: Coveralls
         run: |
-          mix test --cover
           mix coveralls.xml
 
       - name: Debug coverage file
         run: |
-          cat cover/excoveralls.xml | head -n 5
+          ls -la cover/
+          cat cover/excoveralls.xml | head -n 20
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
