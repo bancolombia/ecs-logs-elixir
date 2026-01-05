@@ -39,7 +39,7 @@ defmodule EcsElixirLogs.MixProject do
     [
       files: ["lib", "mix.exs", "README", "LICENSE*"],
       maintainers: ["Jhonatan Hidalgo", "Nicolas Figueroa"],
-      licenses: ["Apache 2.0"],
+      licenses: ["MIT License"],
       links: %{
         "GitHub" => "https://github.com/bancolombia/ecs-logs-elixir"
       }
@@ -72,7 +72,8 @@ defmodule EcsElixirLogs.MixProject do
       {:sobelow, "~> 0.14.0", [only: :test]},
       {:credo_sonarqube, "~> 0.1", [only: :test]},
       {:ex_unit_sonarqube, "~> 0.1.3", [only: :test]},
-      {:elixir_structure_manager, "~> 1.6.0", [only: [:dev, :test]]}
+      {:elixir_structure_manager, "~> 1.6.0", [only: [:dev, :test]]},
+      {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false}
     ]
   end
 end
