@@ -68,12 +68,43 @@ jobs:
           SKIP_GIT_HOOKS: 'true'
       - name: Static code analysis
         run: mix format --check-formatted && mix credo --strict && mix dialyzer
-      # - name: Tests & Coverage (main)
-      #   if: github.ref == 'refs/heads/main'
-      #   run: mix coveralls.github
-      #   env:
-      #     CI_ENV: 'true'
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #SONAR
+      - name: Credo Sonar
+        run: mix credo --sonarqube-base-folder base/folder --sonarqube-file credo_sonarqube.json
+      - name: Sobelow
+        run: |
+          mkdir -p cover
+          mix sobelow --out sobelow.json
+          cat sobelow.json | head -n 5
+          mix ca.sobelow.sonar -i sobelow.json -o cover/sobelow_sonarqube.json
+      - name: Coveralls
+        run: |
+          mix coveralls.xml
+        env:
+          MIX_ENV: test
+      - name: Debug coverage file
+        run: |
+          ls -la cover/
+          cat cover/excoveralls.xml | head -n 20
+      - name: Fix coverage file paths
+        run: |
+          sed -i 's|path="/lib/|path="lib/|g' cover/excoveralls.xml
+          sed -i 's|path="/test/|path="test/|g' cover/excoveralls.xml
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v7.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+      #Cover with Elixir tools
+      - name: Tests & Coverage (main)
+        if: github.ref == 'refs/heads/main'
+        run: mix coveralls.github
+        env:
+          CI_ENV: 'true'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Tests & Coverage (pull requests)
         if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         run: mix coveralls.lcov
