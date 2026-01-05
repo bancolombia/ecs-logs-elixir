@@ -37,7 +37,7 @@ defmodule EcsElixirLogs.MixProject do
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README", "LICENSE*"],
+      files: ["lib", "mix.exs", "README.md", "LICENSE*"],
       maintainers: ["Jhonatan Hidalgo", "Nicolas Figueroa"],
       licenses: ["MIT License"],
       links: %{
