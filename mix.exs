@@ -39,7 +39,7 @@ defmodule EcsElixirLogs.MixProject do
     [
       files: ["lib", "mix.exs", "README.md", "LICENSE*"],
       maintainers: ["Jhonatan Hidalgo", "Nicolas Figueroa"],
-      licenses: ["MIT License"],
+      licenses: ["MIT"],
       links: %{
         "GitHub" => "https://github.com/bancolombia/ecs-logs-elixir"
       }
