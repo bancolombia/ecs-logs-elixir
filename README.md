@@ -9,7 +9,7 @@ Add `ecs_logs_elixir` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ecs_logs_elixir, , "~> 0.1.0"}
+    {:ecs_logs_elixir, "~> 0.1.0"}
   ]
 end
 ```
@@ -22,16 +22,47 @@ mix deps.get
 
 ## Configuration
 
-### Service Name Configuration
+### Library Configuration (`:ecs_logs_elixir`)
 
-Configure your service name in `config/config.exs`:
+In your host API, add this to `config/config.exs`:
 
 ```elixir
 config :ecs_logs_elixir,
-  service_name: "my_application"
+  service_name: "api_auth",
+  sampling_source_app: :api_auth,
+  sampling_source_key: :ecs_sampling
 ```
 
-If no service name is configured, it defaults to `"INDEFINIDO"`.
+- `service_name`: ECS `service` field value. Default: `"INDEFINIDO"`.
+- `sampling_source_app`: app where sampling config lives. Default: `:ecs_logs_elixir`.
+- `sampling_source_key`: config key used to read sampling rules. Default: `:ecs_sampling`.
+
+### Sampling Configuration In Host API
+
+In `config/dev.exs`, `config/test.exs`, and `config/pdn.exs` add:
+
+```elixir
+# sampling
+config :api_auth, :ecs_sampling,
+  rules20XJson: "[{\"uri\":\"/signin\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":1}]",
+  rules40XJson: "[{\"uri\":\"/signin\",\"responseCode\":\"401\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-401\"},
+                  {\"uri\":\"/signup\",\"responseCode\":\"409\",\"showCount\":1,\"skipCount\":3,\"errorCodes\":\"ER-409\"},
+                  {\"uri\":\"/signup\",\"responseCode\":\"400\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-400\"},
+                  {\"uri\":\"/signin\",\"responseCode\":\"404\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-404\"}]"
+```
+
+### Sampling Runtime Behavior
+
+- `20X`: rule key is `"#{uri}|#{responseCode}"`.
+- `40X`: rule key is `"#{uri}|#{derived_error_code}"`.
+- For `40X`, `derived_error_code` is built from the first two segments of `internal_error_code`.
+  - Example: `"ER-409-01-01" -> "ER-409"`.
+- If no matching rule is found, the log is printed.
+- If sampling config cannot be parsed/loaded, the log is printed (fail-open).
+- For matching rules:
+  - `cycle = showCount + skipCount`
+  - log is printed when `position < showCount`
+  - counters rotate by cycle.
 
 ## Usage
 
@@ -120,6 +151,104 @@ defmodule MyApp.UserService do
   end
 end
 ```
+
+### Host API Integration In Global Response/Error Handlers
+
+Add ECS logging in both your global response and error handlers.
+
+#### Success
+
+```elixir
+require ElixirEcsLogger
+
+log_success(response, conn, headers, request_body)
+
+defp log_success(%{status: status, body: response_body}, conn, headers, request_body) do
+  payload = build_ecs_payload(conn, status, headers, request_body, response_body)
+  ElixirEcsLogger.log_ecs(payload)
+end
+
+defp build_ecs_payload(conn, status, headers, request_body, response_body) do
+  %{
+    error_code: "",
+    error_message: "",
+    level: "INFO",
+    internal_error_code: "",
+    internal_error_message: "",
+    additional_details: "",
+    message_id: Map.get(headers, "message_id", ""),
+    consumer: nil,
+    additional_info: build_additional_info(conn, status, headers, request_body, response_body)
+  }
+end
+
+defp build_additional_info(conn, status, headers, body, response_body) do
+  %{
+    method: conn.method,
+    uri: conn.request_path,
+    headers: headers,
+    requestBody: body,
+    responseBody: response_body,
+    responseResult: "OK",
+    responseCode: status
+  }
+end
+```
+
+#### Error
+
+```elixir
+require ElixirEcsLogger
+
+@status_descriptions %{
+  400 => "Bad Request",
+  401 => "Unauthorized",
+  404 => "Not Found",
+  409 => "Conflict",
+  500 => "Internal Server Error"
+}
+
+log_error(exception_data, conn, headers, body)
+
+defp log_error(exception_data, conn, headers, body) do
+  payload = build_ecs_payload(exception_data, conn, headers, body)
+  ElixirEcsLogger.log_ecs(payload)
+end
+
+defp build_ecs_payload(exception_data, conn, headers, body) do
+  %{
+    error_code: exception_data.code,
+    error_message: exception_data.detail,
+    level: "ERROR",
+    internal_error_code: exception_data.log_code,
+    internal_error_message: exception_data.log_message,
+    additional_details: "",
+    message_id: Map.get(headers, "message_id", ""),
+    consumer: nil,
+    additional_info: build_additional_info(conn, exception_data.status, headers, body)
+  }
+end
+
+defp build_additional_info(conn, status, headers, body) do
+  %{
+    method: conn.method,
+    uri: conn.request_path,
+    headers: headers,
+    requestBody: body,
+    responseResult: status_description(status),
+    responseCode: status
+  }
+end
+
+defp status_description(status), do: Map.get(@status_descriptions, status, "Unknown Error")
+```
+
+### Important Integration Notes
+
+- `additional_info.uri` and `additional_info.responseCode` are required for sampling decisions.
+- Keep `internal_error_code` in a derivable format for `40X` matching.
+  - Recommended format: `PREFIX-CODE-...` (example: `ER-409-01-01`).
+- Ensure logging is invoked from central/global handlers to avoid missing requests.
 
 ## API Documentation
 
