@@ -1,36 +1,34 @@
 defmodule CoreExceptionTest do
   use ExUnit.Case
 
+  defp info_payload(response_code \\ 409) do
+    %{uri: "/x", responseCode: response_code}
+  end
+
   describe "new/1" do
     test "should return an error when attrs are not a map" do
       assert {:error, _reason} = CoreException.new("invalid input")
     end
 
-    test "should return an error when error code is missing" do
-      attrs = %{
-        error_message: "message"
-      }
+    test "should validate required fields for error levels" do
+      cases = [
+        {%{error_message: "message", additional_info: info_payload()},
+         "Missing required fields: [:error_code]"},
+        {%{error_code: "code", additional_info: info_payload()},
+         "Missing required fields: [:error_message]"},
+        {%{}, "Missing required fields: [:error_code, :error_message, :additional_info]"}
+      ]
 
-      assert {:error, "Missing required fields: [:error_code]"} == CoreException.new(attrs)
-    end
-
-    test "should return an error when error message is missing" do
-      attrs = %{
-        error_code: "code"
-      }
-
-      assert {:error, "Missing required fields: [:error_message]"} == CoreException.new(attrs)
-    end
-
-    test "should return an error when all required fields are missing" do
-      assert {:error, "Missing required fields: [:error_code, :error_message]"} ==
-               CoreException.new(%{})
+      Enum.each(cases, fn {attrs, expected_error} ->
+        assert {:error, ^expected_error} = CoreException.new(attrs)
+      end)
     end
 
     test "should return an error when level value is invalid" do
       attrs = %{
         error_code: "code",
         error_message: "message",
+        additional_info: info_payload(),
         level: "invalid_level"
       }
 
@@ -41,7 +39,8 @@ defmodule CoreExceptionTest do
       attrs = %{
         error_code: {},
         error_message: [],
-        internal_error_code: 123
+        internal_error_code: 123,
+        additional_info: info_payload()
       }
 
       assert {:error, _reason} = CoreException.new(attrs)
@@ -54,7 +53,8 @@ defmodule CoreExceptionTest do
         level: "ERROR",
         internal_error_code: "internal_code",
         internal_error_message: "internal_message",
-        additional_details: %{detail: "info"}
+        additional_details: %{detail: "info"},
+        additional_info: info_payload()
       }
 
       assert {:ok, %CoreException{} = exception} = CoreException.new(attrs)
@@ -69,7 +69,8 @@ defmodule CoreExceptionTest do
     test "should create CoreException struct when all validations pass with minimal fields" do
       attrs = %{
         error_code: "code",
-        error_message: "message"
+        error_message: "message",
+        additional_info: info_payload()
       }
 
       assert {:ok, %CoreException{} = exception} = CoreException.new(attrs)
@@ -81,32 +82,36 @@ defmodule CoreExceptionTest do
       assert exception.additional_details == nil
     end
 
-    test "should create CoreException struct when additional details are not a map" do
-      attrs = %{
-        error_code: "code",
-        error_message: "message",
-        additional_details: "Some string details"
-      }
+    test "should normalize additional_details variants" do
+      cases = [
+        {"Some string details", fn details -> assert details =~ "Some string details" end},
+        {%LogRecord{}, fn details -> assert details == Map.from_struct(%LogRecord{}) end}
+      ]
 
-      assert {:ok, %CoreException{} = exception} = CoreException.new(attrs)
-      assert exception.error_code == "code"
-      assert exception.error_message == "message"
-      assert exception.level == "ERROR"
-      assert exception.additional_details =~ "Some string details"
+      Enum.each(cases, fn {additional_details, assertion} ->
+        attrs = %{
+          error_code: "code",
+          error_message: "message",
+          additional_details: additional_details,
+          additional_info: info_payload()
+        }
+
+        assert {:ok, %CoreException{} = exception} = CoreException.new(attrs)
+        assertion.(exception.additional_details)
+      end)
     end
 
-    test "should create CoreException struct when additional details are an struct" do
+    test "should allow INFO level without required error fields" do
       attrs = %{
-        error_code: "code",
-        error_message: "message",
-        additional_details: %LogRecord{}
+        level: "INFO",
+        additional_info: info_payload(200)
       }
 
       assert {:ok, %CoreException{} = exception} = CoreException.new(attrs)
-      assert exception.error_code == "code"
-      assert exception.error_message == "message"
-      assert exception.level == "ERROR"
-      assert exception.additional_details == Map.from_struct(%LogRecord{})
+      assert exception.level == "INFO"
+      assert exception.error_code == nil
+      assert exception.error_message == nil
+      assert exception.additional_details == nil
     end
   end
 end

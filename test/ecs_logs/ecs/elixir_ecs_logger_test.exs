@@ -15,7 +15,8 @@ defmodule ElixirEcsLoggerTest do
     test "should return ok with valid params" do
       attrs = %{
         error_code: "code",
-        error_message: "message"
+        error_message: "message",
+        additional_info: %{uri: "/signup", responseCode: 409}
       }
 
       assert :ok = ElixirEcsLogger.log_ecs(attrs)
@@ -24,7 +25,8 @@ defmodule ElixirEcsLoggerTest do
     test "should log successfully with valid params" do
       attrs = %{
         error_code: "code",
-        error_message: "message"
+        error_message: "message",
+        additional_info: %{uri: "/signup", responseCode: 409}
       }
 
       log_output =
@@ -43,7 +45,8 @@ defmodule ElixirEcsLoggerTest do
         attrs = %{
           error_code: "CODE",
           error_message: "Message",
-          level: level
+          level: level,
+          additional_info: %{uri: "/test", responseCode: if(level == "INFO", do: 200, else: 409)}
         }
 
         log_output =
