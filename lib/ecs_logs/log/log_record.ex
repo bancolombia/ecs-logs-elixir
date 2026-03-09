@@ -68,11 +68,11 @@ defmodule LogRecord do
 
   defp build_error(%CoreException{level: @error_level} = exception) do
     %Error{
-        type: exception.internal_error_code || @pending_implementation,
-        message: exception.error_message,
-        description: exception.internal_error_message || @pending_implementation,
-        optionalInfo: exception.additional_details
-      }
+      type: exception.internal_error_code || @pending_implementation,
+      message: exception.error_message,
+      description: exception.internal_error_message || @pending_implementation,
+      optionalInfo: exception.additional_details
+    }
   end
 
   defp build_error(_exception), do: nil

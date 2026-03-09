@@ -52,7 +52,9 @@ defmodule SamplingHelper do
     fetch_and_run(SamplingRuleSet.fetch_40x_rule(ruleset, key), key)
   end
 
-  defp fetch_and_run({:ok, rule}, key), do: SamplingCounter.next_position(key, rule.cycle) < rule.show_count
+  defp fetch_and_run({:ok, rule}, key),
+    do: SamplingCounter.next_position(key, rule.cycle) < rule.show_count
+
   defp fetch_and_run(:error, _key), do: true
 
   def derive_error_code(nil), do: nil

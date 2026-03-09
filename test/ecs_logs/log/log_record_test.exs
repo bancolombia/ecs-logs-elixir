@@ -60,12 +60,20 @@ defmodule LogRecordTest do
     end
 
     test "should omit error block for non-error levels" do
-      exception = %CoreException{level: "INFO", additional_info: %{uri: "/signin", responseCode: 200}}
+      exception = %CoreException{
+        level: "INFO",
+        additional_info: %{uri: "/signin", responseCode: 200}
+      }
+
       assert %LogRecord{error: nil} = LogRecord.build_log_record(exception, %{})
     end
 
     test "json encoder keeps error when present and removes when nil" do
-      with_error = %LogRecord{level: "ERROR", error: %LogRecord.Error{type: "ER-1", message: "m", description: "d"}}
+      with_error = %LogRecord{
+        level: "ERROR",
+        error: %LogRecord.Error{type: "ER-1", message: "m", description: "d"}
+      }
+
       without_error = %LogRecord{level: "INFO", error: nil}
 
       assert Jason.encode!(with_error) =~ "\"error\""

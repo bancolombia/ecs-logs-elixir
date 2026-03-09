@@ -55,22 +55,22 @@ defmodule SamplingRuleSetTest do
          "invalid uri"},
         {"[{\"uri\":\"/x\",\"responseCode\":\"\",\"showCount\":1,\"skipCount\":0}]", :rules20x,
          "invalid responseCode"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":-1,\"skipCount\":0}]", :rules20x,
-         "invalid showCount"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":-1}]", :rules20x,
-         "invalid skipCount"},
+        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":-1,\"skipCount\":0}]",
+         :rules20x, "invalid showCount"},
+        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":-1}]",
+         :rules20x, "invalid skipCount"},
         {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":0,\"skipCount\":0}]", :rules20x,
          "invalid cycle"},
         {"[{\"uri\":\"/x\",\"responseCode\":\"401\",\"showCount\":1,\"skipCount\":0}]", :rules20x,
          "rules20x"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"ER-200\"}]", :rules40x,
-         "rules40x"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"ER-200\"}]", :rules20x,
-         "must not define errorCodes"},
+        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"ER-200\"}]",
+         :rules40x, "rules40x"},
+        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"ER-200\"}]",
+         :rules20x, "must not define errorCodes"},
         {"[{\"uri\":\"/x\",\"responseCode\":\"400\",\"showCount\":1,\"skipCount\":0}]", :rules40x,
          "must define non-empty errorCodes"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"400\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"ER-400|ER@401\"}]", :rules40x,
-         "invalid errorCodes segments"}
+        {"[{\"uri\":\"/x\",\"responseCode\":\"400\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"ER-400|ER@401\"}]",
+         :rules40x, "invalid errorCodes segments"}
       ]
 
       Enum.each(cases, fn {input, type, expected_reason} ->
