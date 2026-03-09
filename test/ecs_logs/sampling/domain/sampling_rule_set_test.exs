@@ -26,10 +26,10 @@ defmodule SamplingRuleSetTest do
   describe "parsing API" do
     test "parses and expands valid rules" do
       rules20x_json =
-        "[{\"uri\":\"/signin\",\"responseCode\":\"200\",\"showCount\":2,\"skipCount\":1}]"
+        ~s([{"uri":"/signin","responseCode":"200","showCount":2,"skipCount":1}])
 
       rules40x_json =
-        "[{\"uri\":\"/signup\",\"responseCode\":\"409\",\"showCount\":1,\"skipCount\":3,\"errorCodes\":\"ER-409|ER-400\"}]"
+        ~s([{"uri":"/signup","responseCode":"409","showCount":1,"skipCount":3,"errorCodes":"ER-409|ER-400"}])
 
       assert {:ok, rules20x} = SamplingRuleSet.parse_rules(rules20x_json, :rules20x)
       assert {:ok, rules40x} = SamplingRuleSet.parse_rules(rules40x_json, :rules40x)
@@ -51,25 +51,25 @@ defmodule SamplingRuleSetTest do
         {%{}, :rules20x, "must be a JSON string"},
         {"{}", :rules20x, "must decode into an array"},
         {"[123]", :rules20x, "must be an object"},
-        {"[{\"uri\":\"\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":0}]", :rules20x,
+        {~s([{"uri":"","responseCode":"200","showCount":1,"skipCount":0}]), :rules20x,
          "invalid uri"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"\",\"showCount\":1,\"skipCount\":0}]", :rules20x,
+        {~s([{"uri":"/x","responseCode":"","showCount":1,"skipCount":0}]), :rules20x,
          "invalid responseCode"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":-1,\"skipCount\":0}]",
-         :rules20x, "invalid showCount"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":-1}]",
-         :rules20x, "invalid skipCount"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":0,\"skipCount\":0}]", :rules20x,
+        {~s([{"uri":"/x","responseCode":"200","showCount":-1,"skipCount":0}]), :rules20x,
+         "invalid showCount"},
+        {~s([{"uri":"/x","responseCode":"200","showCount":1,"skipCount":-1}]), :rules20x,
+         "invalid skipCount"},
+        {~s([{"uri":"/x","responseCode":"200","showCount":0,"skipCount":0}]), :rules20x,
          "invalid cycle"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"401\",\"showCount\":1,\"skipCount\":0}]", :rules20x,
+        {~s([{"uri":"/x","responseCode":"401","showCount":1,"skipCount":0}]), :rules20x,
          "rules20x"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"ER-200\"}]",
+        {~s([{"uri":"/x","responseCode":"200","showCount":1,"skipCount":0,"errorCodes":"ER-200"}]),
          :rules40x, "rules40x"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"ER-200\"}]",
+        {~s([{"uri":"/x","responseCode":"200","showCount":1,"skipCount":0,"errorCodes":"ER-200"}]),
          :rules20x, "must not define errorCodes"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"400\",\"showCount\":1,\"skipCount\":0}]", :rules40x,
+        {~s([{"uri":"/x","responseCode":"400","showCount":1,"skipCount":0}]), :rules40x,
          "must define non-empty errorCodes"},
-        {"[{\"uri\":\"/x\",\"responseCode\":\"400\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"ER-400|ER@401\"}]",
+        {~s([{"uri":"/x","responseCode":"400","showCount":1,"skipCount":0,"errorCodes":"ER-400|ER@401"}]),
          :rules40x, "invalid errorCodes segments"}
       ]
 
@@ -81,7 +81,7 @@ defmodule SamplingRuleSetTest do
 
     test "validates accepted optional/required errorCodes behavior" do
       empty_string_20x =
-        "[{\"uri\":\"/x\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":0,\"errorCodes\":\"\"}]"
+        ~s([{"uri":"/x","responseCode":"200","showCount":1,"skipCount":0,"errorCodes":""}])
 
       assert {:ok, [_]} = SamplingRuleSet.parse_rules(empty_string_20x, :rules20x)
     end
