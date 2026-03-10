@@ -22,7 +22,8 @@ defmodule ElixirEcsLogger do
               internal_error_message: String.t() | nil,
               additional_details: any() | nil,
               message_id: String.t() | nil,
-              consumer: String.t() | nil
+              consumer: String.t() | nil,
+              additional_info: map()
             }
         ) :: :ok | {:error, String.t()}
 
@@ -32,7 +33,7 @@ defmodule ElixirEcsLogger do
   def log_ecs(attrs) when is_map(attrs) do
     with {:ok, exception} <- build_core_exception(attrs),
          log <- build_log_record(exception, attrs) do
-      print_log_error(log)
+      maybe_print_log(attrs, log)
       :ok
     else
       error -> error
@@ -65,6 +66,12 @@ defmodule ElixirEcsLogger do
       @warning -> Logger.warning(json_log)
       @error -> Logger.error(json_log)
       @critical -> Logger.critical(json_log)
+    end
+  end
+
+  defp maybe_print_log(attrs, %LogRecord{} = log_record) do
+    if SamplingHelper.should_log?(attrs, log_record) do
+      print_log_error(log_record)
     end
   end
 end

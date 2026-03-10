@@ -13,17 +13,18 @@ defmodule CoreException do
   @critical "CRITICAL"
   @level_list [@debug, @info, @error, @warning, @critical]
 
-  @required_fields [:error_code, :error_message]
+  @required_fields [:error_code, :error_message, :additional_info]
   @optional_fields [:level, :internal_error_code, :internal_error_message, :additional_details]
   @all_fields @required_fields ++ @optional_fields
-
+  @error_levels [@error, @warning, @critical]
   defstruct [
     :level,
     :error_code,
     :error_message,
     :internal_error_code,
     :internal_error_message,
-    :additional_details
+    :additional_details,
+    :additional_info
   ]
 
   @type t :: %__MODULE__{
@@ -32,7 +33,8 @@ defmodule CoreException do
           error_message: String.t(),
           internal_error_code: String.t() | nil,
           internal_error_message: String.t() | nil,
-          additional_details: any() | nil
+          additional_details: any() | nil,
+          additional_info: map()
         }
 
   def new(attrs) when is_map(attrs) do
@@ -55,8 +57,11 @@ defmodule CoreException do
   end
 
   defp validate_required_fields(attrs) do
+    effective_level = Map.get(attrs, :level, @error)
+    required = if effective_level in @error_levels, do: @required_fields, else: []
+
     missing_fields =
-      @required_fields
+      required
       |> Enum.filter(fn field ->
         value = Map.get(attrs, field)
         is_nil(value) or value == ""

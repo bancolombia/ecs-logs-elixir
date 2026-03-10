@@ -14,7 +14,8 @@ defmodule LogRecordTest do
         level: "ERROR",
         internal_error_code: "internal_code",
         internal_error_message: "internal_message",
-        additional_details: %{detail: "info"}
+        additional_details: %{detail: "info"},
+        additional_info: %{uri: "/signup", responseCode: 409}
       }
 
       {:ok, exception} = CoreException.new(exception_attrs)
@@ -29,7 +30,7 @@ defmodule LogRecordTest do
                date: date,
                service: "INDEFINIDO",
                consumer: "consumer",
-               additionalInfo: nil,
+               additionalInfo: %{uri: "/signup", responseCode: 409},
                level: "ERROR",
                error: %LogRecord.Error{
                  type: "internal_code",
@@ -48,12 +49,35 @@ defmodule LogRecordTest do
     end
 
     test "should build a log record with pending to implement fields" do
+      exception = %CoreException{level: "ERROR", error_message: "message", additional_info: %{}}
+
       assert %{
                error: %LogRecord.Error{
                  type: "PENDIENTE IMPLEMENTACION",
                  description: "PENDIENTE IMPLEMENTACION"
                }
-             } = LogRecord.build_log_record(%CoreException{}, %{})
+             } = LogRecord.build_log_record(exception, %{})
+    end
+
+    test "should omit error block for non-error levels" do
+      exception = %CoreException{
+        level: "INFO",
+        additional_info: %{uri: "/signin", responseCode: 200}
+      }
+
+      assert %LogRecord{error: nil} = LogRecord.build_log_record(exception, %{})
+    end
+
+    test "json encoder keeps error when present and removes when nil" do
+      with_error = %LogRecord{
+        level: "ERROR",
+        error: %LogRecord.Error{type: "ER-1", message: "m", description: "d"}
+      }
+
+      without_error = %LogRecord{level: "INFO", error: nil}
+
+      assert Jason.encode!(with_error) =~ "\"error\""
+      refute Jason.encode!(without_error) =~ "\"error\""
     end
   end
 end
