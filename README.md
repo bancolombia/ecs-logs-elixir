@@ -9,7 +9,7 @@ Add `ecs_logs_elixir` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ecs_logs_elixir, "~> 0.1.0"}
+    {:ecs_logs_elixir, , "~> 0.1.0"}
   ]
 end
 ```
@@ -22,47 +22,154 @@ mix deps.get
 
 ## Configuration
 
-### Library Configuration (`:ecs_logs_elixir`)
+### Service Configuration
 
-In your host API, add this to `config/config.exs`:
+Configure your service name, sampling_source_app, and sampling_source_key in `config/config.exs`:
 
 ```elixir
 config :ecs_logs_elixir,
-  service_name: "api_auth",
-  sampling_source_app: :api_auth,
+  service_name: "my_application",
+  sampling_source_app: :my_application,
   sampling_source_key: :ecs_sampling
 ```
 
-- `service_name`: ECS `service` field value. Default: `"INDEFINIDO"`.
-- `sampling_source_app`: app where sampling config lives. Default: `:ecs_logs_elixir`.
-- `sampling_source_key`: config key used to read sampling rules. Default: `:ecs_sampling`.
+- `service_name`: name of the service reported in the ECS payload. If not defined, the default value is `"INDEFINIDO"`.
+- `sampling_source_app`: name of the application where the sampling configuration is stored. Default: `:ecs_logs_elixir`.
+- `sampling_source_key`: configuration key used to read sampling rules. Default: `:ecs_sampling`.
 
-### Sampling Configuration In Host API
+## Sampling
 
-In `config/dev.exs`, `config/test.exs`, and `config/pdn.exs` add:
+It allows you to reduce the number of ECS logs written for selected requests instead of logging every matching event. Sampling rules are loaded from the application defined in `sampling_source_app` and the key defined in `sampling_source_key`.
+
+Each sampling rule contains:
+
+- `uri`: endpoint path to match.
+- `responseCode`: HTTP response code used to classify the rule.
+- `showCount`: number of matching logs to print.
+- `skipCount`: number of matching logs to skip.
+- `errorCodes`: pipe-separated error codes used only for `40X` rules.
+
+### Sampling Configuration
+
+In environment-specific files such as `config/dev.exs`, `config/test.exs`, and `config/pdn.exs`, define the sampling rules under the application and key configured by `sampling_source_app` and `sampling_source_key`.
+
+Minimal structure:
 
 ```elixir
 # sampling
-config :api_auth, :ecs_sampling,
+config :my_application, :ecs_sampling,
   rules20XJson: "[{\"uri\":\"/signin\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":1}]",
-  rules40XJson: "[{\"uri\":\"/signin\",\"responseCode\":\"401\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-401\"},
-                  {\"uri\":\"/signup\",\"responseCode\":\"409\",\"showCount\":1,\"skipCount\":3,\"errorCodes\":\"ER-409\"},
-                  {\"uri\":\"/signup\",\"responseCode\":\"400\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-400\"},
-                  {\"uri\":\"/signin\",\"responseCode\":\"404\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-404\"}]"
+  rules40XJson: "[{\"uri\":\"/signin\",\"responseCode\":\"401\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-401\"},{\"uri\":\"/signup\",\"responseCode\":\"409\",\"showCount\":1,\"skipCount\":3,\"errorCodes\":\"ER-409\"}]"
 ```
+
+### `rules20XJson`
+
+Use this variable to define sampling rules for endpoints that return `20X` HTTP status codes.
+
+Valid JSON value:
+
+```json
+[
+  {
+    "uri": "/signin",
+    "responseCode": "200",
+    "showCount": 1,
+    "skipCount": 1
+  }
+]
+```
+
+This rule means that for `/signin` with HTTP `200`, the library prints `1` log and skips `1` log. In practice, matching requests are logged 50% of the time.
+
+How it must look inside Elixir config:
+
+```elixir
+rules20XJson: "[{\"uri\":\"/signin\",\"responseCode\":\"200\",\"showCount\":1,\"skipCount\":1}]"
+```
+
+You can also use an empty string or an empty JSON array if you do not want sampling rules for `20X` responses.
+
+### `rules40XJson`
+
+Use this variable to define sampling rules for endpoints that return `40X` HTTP status codes.
+
+Valid JSON value:
+
+```json
+[
+  {
+    "uri": "/signin",
+    "responseCode": "401",
+    "showCount": 1,
+    "skipCount": 1,
+    "errorCodes": "ER-401"
+  },
+  {
+    "uri": "/signup",
+    "responseCode": "409",
+    "showCount": 1,
+    "skipCount": 3,
+    "errorCodes": "ER-409"
+  },
+  {
+    "uri": "/signup",
+    "responseCode": "400",
+    "showCount": 1,
+    "skipCount": 1,
+    "errorCodes": "ER-400"
+  },
+  {
+    "uri": "/signin",
+    "responseCode": "404",
+    "showCount": 1,
+    "skipCount": 1,
+    "errorCodes": "ER-404"
+  }
+]
+```
+
+These rules define sampling for `40X` responses using the derived error code. For example, `/signup` with derived error code `ER-409` prints `1` log and skips `3`, so matching requests are logged 25% of the time.
+
+How it must look inside Elixir config:
+
+```elixir
+rules40XJson: "[{\"uri\":\"/signin\",\"responseCode\":\"401\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-401\"},{\"uri\":\"/signup\",\"responseCode\":\"409\",\"showCount\":1,\"skipCount\":3,\"errorCodes\":\"ER-409\"},{\"uri\":\"/signup\",\"responseCode\":\"400\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-400\"},{\"uri\":\"/signin\",\"responseCode\":\"404\",\"showCount\":1,\"skipCount\":1,\"errorCodes\":\"ER-404\"}]"
+```
+
+You can also use an empty string or an empty JSON array if you do not want sampling rules for `40X` responses.
+
+Because both values are JSON arrays stored as strings, double quotes must be escaped inside Elixir config.
 
 ### Sampling Runtime Behavior
 
-- `20X`: rule key is `"#{uri}|#{responseCode}"`.
-- `40X`: rule key is `"#{uri}|#{derived_error_code}"`.
-- For `40X`, `derived_error_code` is built from the first two segments of `internal_error_code`.
-  - Example: `"ER-409-01-01" -> "ER-409"`.
+For `20X` responses:
+
+- Rules are matched with the key `"#{uri}|#{responseCode}"`.
+- `errorCodes` must not be configured. If present, it must be empty.
+
+For `40X` responses:
+
+- Rules are matched with the key `"#{uri}|#{derived_error_code}"`.
+- `errorCodes` is required and must contain one or more pipe-separated values.
+- The derived error code is built from the first two segments of `internal_error_code`.
+- Example: `"ER-409-01-01"` becomes `"ER-409"`.
+
+General behavior:
+
+- `cycle = showCount + skipCount`.
+- A log is printed when the current counter position is lower than `showCount`.
+- Counters rotate within the configured cycle for each rule key.
 - If no matching rule is found, the log is printed.
-- If sampling config cannot be parsed/loaded, the log is printed (fail-open).
-- For matching rules:
-  - `cycle = showCount + skipCount`
-  - log is printed when `position < showCount`
-  - counters rotate by cycle.
+- If sampling configuration is missing, invalid, or cannot be parsed, the log is printed.
+- Any response not covered by a configured rule is logged normally.
+
+### Sampling Validation Notes
+
+- `rules20XJson` only accepts rules whose `responseCode` starts with `20`.
+- `rules40XJson` only accepts rules whose `responseCode` starts with `40`.
+- `showCount` and `skipCount` must be non-negative integers.
+- `showCount + skipCount` must be greater than `0`.
+- An empty string or an empty JSON array means no sampling rules are applied for that group.
 
 ## Usage
 
@@ -72,7 +179,11 @@ config :api_auth, :ecs_sampling,
 # Simple error logging
 ElixirEcsLogger.log_ecs(%{
   error_code: "USER_001",
-  error_message: "User validation failed"
+  error_message: "User validation failed",
+  additional_info: %{
+    uri: "/users",
+    responseCode: 400
+  }
 })
 
 # Logging with additional details
@@ -88,7 +199,11 @@ ElixirEcsLogger.log_ecs(%{
     retry_count: 3
   },
   message_id: "msg_12345",
-  consumer: "user_service"
+  consumer: "user_service",
+  additional_info: %{
+    uri: "/users",
+    responseCode: 500
+  }
 })
 ```
 
@@ -96,25 +211,35 @@ ElixirEcsLogger.log_ecs(%{
 
 The library supports the following log levels:
 
-- `"DEBUG"` - Detailed information for debugging
-- `"INFO"` - General information messages
-- `"WARNING"` - Warning messages for potential issues
-- `"ERROR"` - Error messages for handled exceptions
-- `"CRITICAL"` - Critical errors that may cause application failure
+- `"DEBUG"`: detailed information for debugging.
+- `"INFO"`: general information messages.
+- `"WARNING"`: warning messages for potential issues.
+- `"ERROR"`: error messages for handled exceptions.
+- `"CRITICAL"`: critical errors that may cause application failure.
 
 ```elixir
 # Debug level logging
 ElixirEcsLogger.log_ecs(%{
   error_code: "DEBUG_001",
   error_message: "Processing user request",
-  level: "DEBUG"
+  level: "DEBUG",
+  additional_info: %{
+    uri: "/users",
+    responseCode: 200
+  }
 })
 
 # Critical level logging
 ElixirEcsLogger.log_ecs(%{
   error_code: "CRIT_001",
   error_message: "Database connection lost",
-  level: "CRITICAL"
+  level: "CRITICAL",
+  internal_error_code: "DB-500-01",
+  internal_error_message: "Primary database is unreachable",
+  additional_info: %{
+    uri: "/users",
+    responseCode: 500
+  }
 })
 ```
 
@@ -131,10 +256,15 @@ defmodule MyApp.UserService do
           level: "INFO",
           message_id: generate_message_id(),
           consumer: "user_service",
-          additional_details: %{user_id: user.id}
+          additional_details: %{user_id: user.id},
+          additional_info: %{
+            uri: "/users",
+            responseCode: 201
+          }
         })
+
         {:ok, user}
-        
+
       {:error, reason} ->
         ElixirEcsLogger.log_ecs(%{
           error_code: "USER_VALIDATION_FAILED",
@@ -144,19 +274,24 @@ defmodule MyApp.UserService do
           internal_error_message: inspect(reason),
           additional_details: %{params: params},
           message_id: generate_message_id(),
-          consumer: "user_service"
+          consumer: "user_service",
+          additional_info: %{
+            uri: "/users",
+            responseCode: 400
+          }
         })
+
         {:error, reason}
     end
   end
 end
 ```
 
-### Host API Integration In Global Response/Error Handlers
+## Application Integration
 
 Add ECS logging in both your global response and error handlers.
 
-#### Success
+### Success Handler
 
 ```elixir
 require ElixirEcsLogger
@@ -195,7 +330,7 @@ defp build_additional_info(conn, status, headers, body, response_body) do
 end
 ```
 
-#### Error
+### Error Handler
 
 ```elixir
 require ElixirEcsLogger
@@ -243,13 +378,6 @@ end
 defp status_description(status), do: Map.get(@status_descriptions, status, "Unknown Error")
 ```
 
-### Important Integration Notes
-
-- `additional_info.uri` and `additional_info.responseCode` are required for sampling decisions.
-- Keep `internal_error_code` in a derivable format for `40X` matching.
-  - Recommended format: `PREFIX-CODE-...` (example: `ER-409-01-01`).
-- Ensure logging is invoked from central/global handlers to avoid missing requests.
-
 ## API Documentation
 
 ### ElixirEcsLogger.log_ecs/1
@@ -260,8 +388,9 @@ Logs a structured message in ECS format.
 - `attrs` (map) - Logging attributes
 
 **Required attributes:**
-- `error_code` (string) - Unique error code identifier
-- `error_message` (string) - Human-readable error message
+- `error_code` (string) - Unique error code identifier. Required for `ERROR`, `WARNING`, and `CRITICAL` levels.
+- `error_message` (string) - Human-readable error message. Required for `ERROR`, `WARNING`, and `CRITICAL` levels.
+- `additional_info` (map) - Contextual data included in the ECS payload. For sampling decisions, `additional_info.uri` and `additional_info.responseCode` are required.
 
 **Optional attributes:**
 - `level` (string) - Log level (defaults to "ERROR")
@@ -285,7 +414,10 @@ The library generates JSON logs with the following structure:
   "date": "29/10/2025 17:48:55.734000",
   "service": "my_application",
   "consumer": "user_service",
-  "additionalInfo": null,
+  "additionalInfo": {
+    "uri": "/users",
+    "responseCode": 400
+  },
   "level": "ERROR",
   "error": {
     "type": "VALIDATION_ERROR",
@@ -298,6 +430,8 @@ The library generates JSON logs with the following structure:
   }
 }
 ```
+
+For non-error levels such as `INFO` and `DEBUG`, the `error` object is omitted from the final JSON payload.
 
 ## Development
 
@@ -326,23 +460,19 @@ mix dialyzer
 
 ## Contributing
 
-We welcome contributions! Please follow these steps:
+Contributions are welcome.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass (`mix test`)
-6. Run code formatting (`mix format`)
-7. Run static analysis (`mix credo`)
-8. Commit your changes (`git commit -m 'feat(user_module): Add amazing feature'`)
-9. Push to the branch (`git push origin feature/amazing-feature`)
-10. Open a Pull Request
+1. Fork the repository.
+2. Create a feature branch.
+3. Make your changes.
+4. Add tests for new functionality.
+5. Ensure tests and checks pass.
+6. Open a Pull Request.
 
 ### Development Guidelines
 
-- Follow Elixir naming conventions
-- Write comprehensive tests for new features
-- Update documentation for API changes
-- Ensure code passes all quality checks
-- Add typespecs for public functions
+- Follow Elixir naming conventions.
+- Write tests for new behavior.
+- Update documentation when the public API changes.
+- Ensure code passes formatting and static analysis checks.
+- Add typespecs for public functions where appropriate.
