@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.2.0](https://github.com/bancolombia/ecs-logs-elixir/tree/v1.2.0) (2026-03-10)
+
+[Full Changelog](https://github.com/bancolombia/ecs-logs-elixir/compare/v1.1.1...v1.2.0)
+
+**Merged pull requests:**
+
+- feat\(Sampling\): add dynamic sampling rules and documentation for ECS logs [\#9](https://github.com/bancolombia/ecs-logs-elixir/pull/9) ([MiltonPacheco29](https://github.com/MiltonPacheco29))
+
 ## [v1.1.1](https://github.com/bancolombia/ecs-logs-elixir/tree/v1.1.1) (2026-01-06)
 
 [Full Changelog](https://github.com/bancolombia/ecs-logs-elixir/compare/v1.1.0...v1.1.1)
